@@ -33,8 +33,31 @@ function ding_debt_ding_provider_user() {
 
 /**
  * Callback for successful payment transaction.
+ *
+ * @param array $transaction
+ *
+ * @return TRUE
  */
 function ding_debt_payment_callback($transaction) {
-  return ding_provider_invoke_page('debt', 'payment_received', $transaction['payment_price'], $transaction['params']['debt_ids'], $transaction['payment_order_id']);
+  // Get user account.
+  $account = user_load($transaction['customer_uid']);
+  // Get user credentials.
+  $creds = ding_user_get_creds($account);
+  // Get payment information from provider.
+  $payment_information = ding_provider_invoke_page(
+    'debt', 
+    'get_payment_service_information', 
+    $account, 
+    $transaction['payment_price']
+  );
+  // Invoke payment service.
+  return ding_provider_invoke_page(
+    'debt', 
+    'payment_received', 
+    $transaction['payment_price'], 
+    $transaction['params']['debt_ids'], 
+    $transaction['payment_transaction_id'], 
+    $payment_information['order_id']
+  );
 }
 
